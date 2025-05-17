@@ -11,7 +11,6 @@ function App() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Dark mode state
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -27,7 +26,6 @@ function App() {
 
     try {
       let url = '';
-
       if (selectedCategory) {
         url = `https://www.themealdb.com/api/json/v1/1/filter.php?c=${selectedCategory}`;
       } else if (query) {
@@ -40,7 +38,6 @@ function App() {
 
       const res = await fetch(url);
       const data = await res.json();
-
       if (data.meals) {
         setRecipes(data.meals);
       } else {
@@ -54,7 +51,6 @@ function App() {
     setLoading(false);
   };
 
-  // Fetch full recipe details by id
   const fetchRecipeDetails = async (id) => {
     setLoading(true);
     setError(null);
@@ -74,7 +70,6 @@ function App() {
     <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
       <h1>Recipe Finder 🍳</h1>
 
-      {/* Dark/Light mode toggle button */}
       <button
         onClick={() => setDarkMode(!darkMode)}
         className="theme-toggle"
@@ -83,6 +78,7 @@ function App() {
         {darkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
       </button>
 
+      {/* Improved Search Bar */}
       <div className="search-bar">
         <input
           type="text"
@@ -118,14 +114,12 @@ function App() {
       </div>
 
       {loading && <div className="spinner"></div>}
-
       {error && <p className="error-message">{error}</p>}
 
       <div className="recipe-grid">
         {recipes.length === 0 && !loading && !error && (
           <p className="no-recipes">No recipes found yet.</p>
         )}
-
         {recipes.map((r) => (
           <div
             key={r.idMeal}
@@ -149,7 +143,6 @@ function App() {
         ))}
       </div>
 
-      {/* Modal */}
       {selectedRecipe && (
         <div
           onClick={() => setSelectedRecipe(null)}
