@@ -1,12 +1,18 @@
 import { useState } from 'react';
+import './App.css';
 
 function App() {
   const [query, setQuery] = useState('');
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const searchRecipes = async () => {
     if (!query) return;
+
+    setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch(
@@ -19,105 +25,55 @@ function App() {
       } else {
         setRecipes([]);
       }
-    } catch (error) {
-      console.error('Error fetching recipes:', error);
+    } catch (err) {
+      setError('Failed to fetch recipes. Please try again.');
       setRecipes([]);
     }
-  };
 
-  const closeModal = () => {
-    setSelectedRecipe(null);
+    setLoading(false);
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 900,
-        margin: '40px auto',
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        padding: '0 20px',
-        backgroundColor: '#f8f8f8',
-        minHeight: '100vh',
-        position: 'relative',
-      }}
-    >
-      <h1 style={{ textAlign: 'center', color: '#333', marginBottom: 30 }}>
-        Recipe Finder 🍳
-      </h1>
+    <div className="app-container">
+      <h1>Recipe Finder 🍳</h1>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 30 }}>
+      <div className="search-bar">
         <input
           type="text"
           placeholder="Search recipe by name or ingredient"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{
-            width: '60%',
-            padding: '12px 15px',
-            fontSize: 18,
-            borderRadius: 5,
-            border: '1.5px solid #ccc',
-            marginRight: 10,
-            outline: 'none',
-          }}
           onKeyDown={(e) => e.key === 'Enter' && searchRecipes()}
+          className="search-input"
         />
-        <button
-          onClick={searchRecipes}
-          style={{
-            padding: '12px 25px',
-            fontSize: 18,
-            backgroundColor: '#ff5722',
-            color: 'white',
-            border: 'none',
-            borderRadius: 5,
-            cursor: 'pointer',
-            boxShadow: '0 3px 6px rgba(0,0,0,0.1)',
-            transition: 'background-color 0.3s ease',
-          }}
-          onMouseEnter={(e) => (e.target.style.backgroundColor = '#e64a19')}
-          onMouseLeave={(e) => (e.target.style.backgroundColor = '#ff5722')}
-        >
+        <button onClick={searchRecipes} className="search-button">
           Search
         </button>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 20,
-        }}
-      >
-        {recipes.length === 0 && (
-          <p style={{ textAlign: 'center', color: '#666', gridColumn: '1 / -1' }}>
-            No recipes found yet.
-          </p>
+      {loading && <div className="spinner"></div>}
+
+      {error && <p className="error-message">{error}</p>}
+
+      <div className="recipe-grid">
+        {recipes.length === 0 && !loading && !error && (
+          <p className="no-recipes">No recipes found yet.</p>
         )}
 
         {recipes.map((r) => (
           <div
             key={r.idMeal}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: 10,
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              transition: 'transform 0.2s',
-            }}
+            className="recipe-card"
             onClick={() => setSelectedRecipe(r)}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
             <img
               src={r.strMealThumb}
               alt={r.strMeal}
-              style={{ width: '100%', height: 180, objectFit: 'cover' }}
+              className="recipe-image"
             />
-            <div style={{ padding: 15 }}>
-              <h3 style={{ margin: '0 0 10px' }}>{r.strMeal}</h3>
-              <p style={{ fontSize: 14, color: '#555', height: 40, overflow: 'hidden' }}>
+            <div className="recipe-content">
+              <h3 className="recipe-title">{r.strMeal}</h3>
+              <p className="recipe-description">
                 {r.strInstructions.substring(0, 80)}...
               </p>
             </div>
@@ -128,7 +84,7 @@ function App() {
       {/* Modal */}
       {selectedRecipe && (
         <div
-          onClick={closeModal}
+          onClick={() => setSelectedRecipe(null)}
           style={{
             position: 'fixed',
             top: 0,
@@ -157,7 +113,7 @@ function App() {
             }}
           >
             <button
-              onClick={closeModal}
+              onClick={() => setSelectedRecipe(null)}
               style={{
                 position: 'absolute',
                 top: 10,
