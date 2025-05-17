@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 
 function App() {
@@ -8,16 +8,37 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const searchRecipes = async () => {
-    if (!query) return;
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    fetch('https://www.themealdb.com/api/json/v1/1/categories.php')
+      .then(res => res.json())
+      .then(data => setCategories(data.categories))
+      .catch(() => {});
+  }, []);
+
+  const searchRecipes = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(
-        `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`
-      );
+      let url = '';
+
+      if (selectedCategory) {
+        url = `https://www.themealdb.com/api/json/v1/1/filter.php?c=${selectedCategory}`;
+      } else if (query) {
+        url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+      } else {
+        setLoading(false);
+        setRecipes([]);
+        return;
+      }
+
+      const res = await fetch(url);
       const data = await res.json();
 
       if (data.meals) {
@@ -25,7 +46,7 @@ function App() {
       } else {
         setRecipes([]);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to fetch recipes. Please try again.');
       setRecipes([]);
     }
@@ -33,9 +54,34 @@ function App() {
     setLoading(false);
   };
 
+  // Fetch full recipe details by id
+  const fetchRecipeDetails = async (id) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+      const data = await res.json();
+      if (data.meals && data.meals.length > 0) {
+        setSelectedRecipe(data.meals[0]);
+      }
+    } catch {
+      setError('Failed to fetch recipe details.');
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="app-container">
+    <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
       <h1>Recipe Finder 🍳</h1>
+
+      {/* Dark/Light mode toggle button */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="theme-toggle"
+        style={{ marginBottom: 20 }}
+      >
+        {darkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
+      </button>
 
       <div className="search-bar">
         <input
@@ -45,7 +91,27 @@ function App() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && searchRecipes()}
           className="search-input"
+          disabled={selectedCategory !== ''}
         />
+
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setQuery('');
+            setRecipes([]);
+            setSelectedRecipe(null);
+          }}
+          className="category-select"
+        >
+          <option value="">All Categories</option>
+          {categories.map(cat => (
+            <option key={cat.idCategory} value={cat.strCategory}>
+              {cat.strCategory}
+            </option>
+          ))}
+        </select>
+
         <button onClick={searchRecipes} className="search-button">
           Search
         </button>
@@ -64,7 +130,7 @@ function App() {
           <div
             key={r.idMeal}
             className="recipe-card"
-            onClick={() => setSelectedRecipe(r)}
+            onClick={() => fetchRecipeDetails(r.idMeal)}
           >
             <img
               src={r.strMealThumb}
@@ -74,7 +140,9 @@ function App() {
             <div className="recipe-content">
               <h3 className="recipe-title">{r.strMeal}</h3>
               <p className="recipe-description">
-                {r.strInstructions.substring(0, 80)}...
+                {r.strInstructions
+                  ? r.strInstructions.substring(0, 80) + '...'
+                  : 'Click to see details'}
               </p>
             </div>
           </div>
@@ -85,45 +153,15 @@ function App() {
       {selectedRecipe && (
         <div
           onClick={() => setSelectedRecipe(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            padding: 20,
-          }}
+          className="modal-background"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: 10,
-              maxWidth: 600,
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: 20,
-              boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-              position: 'relative',
-            }}
+            className="modal-content"
           >
             <button
               onClick={() => setSelectedRecipe(null)}
-              style={{
-                position: 'absolute',
-                top: 10,
-                right: 10,
-                background: 'none',
-                border: 'none',
-                fontSize: 24,
-                cursor: 'pointer',
-                color: '#555',
-              }}
+              className="modal-close-button"
             >
               &times;
             </button>
@@ -135,7 +173,9 @@ function App() {
               style={{ width: '100%', borderRadius: 10, marginBottom: 15 }}
             />
             <h3>Instructions</h3>
-            <p style={{ whiteSpace: 'pre-line' }}>{selectedRecipe.strInstructions}</p>
+            <p style={{ whiteSpace: 'pre-line' }}>
+              {selectedRecipe.strInstructions || 'No instructions available.'}
+            </p>
 
             <h3>Ingredients</h3>
             <ul>
