@@ -7,10 +7,8 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
-
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -23,7 +21,6 @@ function App() {
   const searchRecipes = async () => {
     setLoading(true);
     setError(null);
-
     try {
       let url = '';
       if (selectedCategory) {
@@ -35,19 +32,14 @@ function App() {
         setRecipes([]);
         return;
       }
-
       const res = await fetch(url);
       const data = await res.json();
-      if (data.meals) {
-        setRecipes(data.meals);
-      } else {
-        setRecipes([]);
-      }
+      if (data.meals) setRecipes(data.meals);
+      else setRecipes([]);
     } catch {
       setError('Failed to fetch recipes. Please try again.');
       setRecipes([]);
     }
-
     setLoading(false);
   };
 
@@ -57,9 +49,7 @@ function App() {
     try {
       const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
       const data = await res.json();
-      if (data.meals && data.meals.length > 0) {
-        setSelectedRecipe(data.meals[0]);
-      }
+      if (data.meals?.length > 0) setSelectedRecipe(data.meals[0]);
     } catch {
       setError('Failed to fetch recipe details.');
     }
@@ -68,17 +58,12 @@ function App() {
 
   return (
     <div className={`app-container ${darkMode ? 'dark' : 'light'}`}>
-      <h1>Recipe Finder 🍳</h1>
-
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className="theme-toggle"
-        style={{ marginBottom: 20 }}
-      >
-        {darkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
+      <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle">
+        {darkMode ? '☀️' : '🌙'}
       </button>
 
-      {/* Improved Search Bar */}
+      <h1 className="title">Recipe Finder 🍳</h1>
+
       <div className="search-bar">
         <input
           type="text"
@@ -126,71 +111,37 @@ function App() {
             className="recipe-card"
             onClick={() => fetchRecipeDetails(r.idMeal)}
           >
-            <img
-              src={r.strMealThumb}
-              alt={r.strMeal}
-              className="recipe-image"
-            />
-            <div className="recipe-content">
-              <h3 className="recipe-title">{r.strMeal}</h3>
-              <p className="recipe-description">
-                {r.strInstructions
-                  ? r.strInstructions.substring(0, 80) + '...'
-                  : 'Click to see details'}
-              </p>
-            </div>
+            <img src={r.strMealThumb} alt={r.strMeal} className="recipe-image" />
+            <h3>{r.strMeal}</h3>
           </div>
         ))}
       </div>
 
       {selectedRecipe && (
-        <div
-          onClick={() => setSelectedRecipe(null)}
-          className="modal-background"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="modal-content"
-          >
-            <button
-              onClick={() => setSelectedRecipe(null)}
-              className="modal-close-button"
-            >
+        <div onClick={() => setSelectedRecipe(null)} className="modal-background">
+          <div onClick={(e) => e.stopPropagation()} className="modal-content">
+            <button onClick={() => setSelectedRecipe(null)} className="modal-close-button">
               &times;
             </button>
-
             <h2>{selectedRecipe.strMeal}</h2>
-            <img
-              src={selectedRecipe.strMealThumb}
-              alt={selectedRecipe.strMeal}
-              style={{ width: '100%', borderRadius: 10, marginBottom: 15 }}
-            />
+            <img src={selectedRecipe.strMealThumb} alt={selectedRecipe.strMeal} />
             <h3>Instructions</h3>
-            <p style={{ whiteSpace: 'pre-line' }}>
-              {selectedRecipe.strInstructions || 'No instructions available.'}
-            </p>
-
+            <p>{selectedRecipe.strInstructions || 'No instructions available.'}</p>
             <h3>Ingredients</h3>
             <ul>
               {Array.from({ length: 20 }, (_, i) => i + 1)
-                .map((num) => ({
+                .map(num => ({
                   ingredient: selectedRecipe[`strIngredient${num}`],
                   measure: selectedRecipe[`strMeasure${num}`],
                 }))
-                .filter((item) => item.ingredient && item.ingredient.trim() !== '')
+                .filter(item => item.ingredient?.trim())
                 .map((item, idx) => (
-                  <li key={idx}>
-                    {item.ingredient} - {item.measure}
-                  </li>
+                  <li key={idx}>{item.ingredient} - {item.measure}</li>
                 ))}
             </ul>
-
             {selectedRecipe.strSource && (
               <p>
-                Source:{' '}
-                <a href={selectedRecipe.strSource} target="_blank" rel="noopener noreferrer">
-                  {selectedRecipe.strSource}
-                </a>
+                Source: <a href={selectedRecipe.strSource} target="_blank" rel="noopener noreferrer">{selectedRecipe.strSource}</a>
               </p>
             )}
           </div>
